@@ -141,14 +141,30 @@ def status():
         'ultimo_registro': sensor_data['time']
     })
     
-    @app.route('/csv_full')
-    def csv_full():
-        """Vista completa del CSV (últimos 100 registros)"""
-        if not historico_csv:
-            return render_template('csv_view.html', registros=[])
-        
-        ultimos = historico_csv[-100:]
-        return render_template('csv_view.html', registros=ultimos)
+    @app.route('/data_full')
+def get_data_full():
+    """✅ NUEVO: Todos los datos para CSV_VIEW"""
+    conn = sqlite3.connect('sensores.db')  # Tu DB
+    cursor = conn.cursor()
+    cursor.execute("SELECT timestamp, temp, humidity, rain FROM sensores ORDER BY timestamp DESC")
+    all_data = cursor.fetchall()
+    
+    csv_history = []
+    for row in all_data:
+        csv_history.append({
+            'time': row[0],
+            'temp': row[1],
+            'humidity': row[2],
+            'rain': row[3]
+        })
+    
+    conn.close()
+    return jsonify({'csv_history': csv_history})
+
+# O si usas simulación:
+@app.route('/data_full')
+def get_data_full():
+    return jsonify({'csv_history': HISTORIAL})
 
 if __name__ == '__main__':
     threading.Thread(target=update_data, daemon=True).start()
