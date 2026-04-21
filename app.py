@@ -39,13 +39,12 @@ sensor_data = {
     'temp': 0.0, 'humidity': 0.0, 'rain': 0.0,
     'time': '00:00:00',
     'total_registros': 0,
-    'modulos_conectados': False  # ✅ NUEVO: Control de módulos
+    'modulos_conectados': False
 }
 
 historico_csv = []
 
 def modulos_conectados():
-    """✅ Verifica si sensores están en rangos reales"""
     return (20 <= sensor_data['temp'] <= 40 and 
             30 <= sensor_data['humidity'] <= 95 and 
             sensor_data['rain'] >= 0)
@@ -54,14 +53,12 @@ def update_data():
     global sensor_data, historicos_graficas, historico_times, historico_csv
     while True:
         try:
-            # ✅ Solo genera datos SI módulos están "conectados"
-            if random.random() < 0.95:  # 95% tiempo conectado
+            if random.random() < 0.95:
                 sensor_data['temp'] = round(random.uniform(20, 35), 1)
                 sensor_data['humidity'] = round(random.uniform(40, 90), 1)
                 sensor_data['rain'] = round(random.uniform(0, 50), 1)
                 sensor_data['modulos_conectados'] = True
             else:
-                # ✅ Sin datos cuando desconectado
                 sensor_data['temp'] = 0.0
                 sensor_data['humidity'] = 0.0
                 sensor_data['rain'] = 0.0
@@ -70,7 +67,6 @@ def update_data():
             now_time = datetime.now().strftime('%H:%M:%S')
             sensor_data['time'] = now_time
             
-            # ✅ SOLO guarda/gráfica SI hay datos válidos
             if sensor_data['modulos_conectados']:
                 historico_times.append(now_time)
                 historicos_graficas['temp'].append(sensor_data['temp'])
@@ -83,7 +79,6 @@ def update_data():
                     for key in historicos_graficas:
                         historicos_graficas[key].pop(0)
                 
-                # 💾 CSV
                 registro = [
                     datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                     sensor_data['temp'], sensor_data['humidity'], sensor_data['rain']
@@ -109,7 +104,7 @@ def index():
     return render_template('index_simple.html', 
                          local_ip=LOCAL_IP, 
                          registros=sensor_data['total_registros'],
-                         modulos_conectados=sensor_data['modulos_conectados'])  # ✅ Pasa estado
+                         modulos_conectados=sensor_data['modulos_conectados'])
 
 @app.route('/data')
 def data():
@@ -141,7 +136,7 @@ def status():
     size = os.path.getsize(CSV_FILE)/1024/1024 if os.path.exists(CSV_FILE) else 0
     return jsonify({
         'total_registros': sensor_data['total_registros'],
-        'modulos_conectados': sensor_data['modulos_conectados'],  # ✅
+        'modulos_conectados': sensor_data['modulos_conectados'],
         'archivo_tamaño': f"{size:.1f} MB",
         'ultimo_registro': sensor_data['time']
     })
