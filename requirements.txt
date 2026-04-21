@@ -1,4 +1,1 @@
-flask
-pillow
-requests
-pyinstaller==6.19.0
+gunicorn==21.2.0
