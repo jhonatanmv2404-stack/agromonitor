@@ -1,30 +1,354 @@
-<!-- QUITA estas secciones LoRa: -->
-<!-- ❌ Elimina todo lo de lora_rssi, lora_snr, lora_status -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 AGROMONITOR v5.2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<!-- ✅ MANTIENE solo estas 3 tarjetas: -->
-<div class="sensor-card temp">
-    <div class="sensor-value">{{ "%.1f"|format(data.temp) if modulos_conectados else "0.0" }}°C</div>
-    <div class="sensor-label">🌡️ Temperatura</div>
-</div>
-<div class="sensor-card humidity">
-    <div class="sensor-value">{{ "%.1f"|format(data.humidity) if modulos_conectados else "0.0" }}%</div>
-    <div class="sensor-label">💧 Humedad</div>
-</div>
-<div class="sensor-card rain">
-    <div class="sensor-value">{{ "%.1f"|format(data.rain) if modulos_conectados else "0.0" }}%</div>
-    <div class="sensor-label">🌧️ Precipitación</div>
-</div>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: white; /* ✅ SOLO CAMBIO: FONDO BLANCO */
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-<!-- ✅ En status, agrega: -->
-<div class="status-item">
-    <span>📶 Módulos:</span>
-    <span class="status-{{ 'online' if modulos_conectados else 'offline' }}">
-        {{ '🟢 CONECTADOS' if modulos_conectados else '🔴 DESCONECTADOS' }}
-    </span>
-</div>
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
-<!-- ❌ QUITA background-image del CSS -->
-body {
-    /* background: linear-gradient... ❌ QUITA ESTO */
-    background: #f0f4f8; /* ✅ Fondo simple */
-}
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .sensor-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9));
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sensor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A, #4CAF50);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+        }
+
+        .sensor-value {
+            font-size: 3.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .temp .sensor-value { color: #FF6B6B; }
+        .humidity .sensor-value { color: #4ECDC4; }
+        .rain .sensor-value { color: #45B7D1; }
+
+        .sensor-label {
+            font-size: 1.2em;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .status-section {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9));
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .status-item span:first-child {
+            display: block;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .status-online { color: #4CAF50; font-weight: bold; }
+        .status-offline { color: #f44336; font-weight: bold; }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9));
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        @media (max-width: 768px) {
+            .sensors-grid, .charts-container, .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sensor-value {
+                font-size: 2.5em;
+            }
+        }
+
+        .disconnected {
+            opacity: 0.5;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 AGROMONITOR v5.2</h1>
+            <p>Sistema de monitoreo agrícola en tiempo real</p>
+            <p><strong>Servidor:</strong> http://{{ local_ip }}:8080 | <strong>Registros:</strong> {{ registros }}</p>
+        </div>
+
+        <div class="sensors-grid" id="sensorsGrid">
+            <div class="sensor-card temp">
+                <div class="sensor-value" id="tempValue">0.0</div>
+                <div class="sensor-label">🌡️ Temperatura</div>
+            </div>
+            <div class="sensor-card humidity">
+                <div class="sensor-value" id="humidityValue">0.0</div>
+                <div class="sensor-label">💧 Humedad</div>
+            </div>
+            <div class="sensor-card rain">
+                <div class="sensor-value" id="rainValue">0.0</div>
+                <div class="sensor-label">🌧️ Precipitación</div>
+            </div>
+        </div>
+
+        <div class="status-section">
+            <div class="status-grid">
+                <div class="status-item">
+                    <span>⏰ Última actualización</span>
+                    <span id="lastUpdate">--:--:--</span>
+                </div>
+                <div class="status-item">
+                    <span>📶 Módulos</span>
+                    <span id="modulosStatus" class="status-offline">🔴 DESCONECTADOS</span>
+                </div>
+                <div class="status-item">
+                    <span>📊 Total registros</span>
+                    <span id="totalRegistros">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>📈 Temperatura (°C)</h3>
+                <canvas id="tempChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>💧 Humedad (%)</h3>
+                <canvas id="humidityChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>🌧️ Precipitación (%)</h3>
+                <canvas id="rainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a href="/csv" class="btn btn-primary">💾 Descargar CSV</a>
+            <a href="/status" class="btn btn-secondary" target="_blank">📊 Estado del Sistema</a>
+        </div>
+    </div>
+
+    <script>
+        let tempChart, humidityChart, rainChart;
+
+        function initCharts() {
+            const ctxTemp = document.getElementById('tempChart').getContext('2d');
+            tempChart = new Chart(ctxTemp, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Temperatura', data: [], borderColor: '#FF6B6B', tension: 0.4, fill: true, backgroundColor: 'rgba(255,107,107,0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            });
+
+            const ctxHum = document.getElementById('humidityChart').getContext('2d');
+            humidityChart = new Chart(ctxHum, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Humedad', data: [], borderColor: '#4ECDC4', tension: 0.4, fill: true, backgroundColor: 'rgba(78,205,196,0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+
+            const ctxRain = document.getElementById('rainChart').getContext('2d');
+            rainChart = new Chart(ctxRain, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Precipitación', data: [], borderColor: '#45B7D1', tension: 0.4, fill: true, backgroundColor: 'rgba(69,183,209,0.1)' }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 50 } } }
+            });
+        }
+
+        async function updateData() {
+            try {
+                const response = await fetch('/data');
+                const data = await response.json();
+
+                // Actualizar sensores
+                document.getElementById('tempValue').textContent = data.modulos_conectados ? data.temp.toFixed(1) : '0.0';
+                document.getElementById('humidityValue').textContent = data.modulos_conectados ? data.humidity.toFixed(1) : '0.0';
+                document.getElementById('rainValue').textContent = data.modulos_conectados ? data.rain.toFixed(1) : '0.0';
+                document.getElementById('lastUpdate').textContent = data.time;
+                document.getElementById('totalRegistros').textContent = data.total_registros;
+
+                // Estado módulos
+                const modulosStatus = document.getElementById('modulosStatus');
+                if (data.modulos_conectados) {
+                    modulosStatus.textContent = '🟢 CONECTADOS';
+                    modulosStatus.className = 'status-online';
+                    document.getElementById('sensorsGrid').classList.remove('disconnected');
+                } else {
+                    modulosStatus.textContent = '🔴 DESCONECTADOS';
+                    modulosStatus.className = 'status-offline';
+                    document.getElementById('sensorsGrid').classList.add('disconnected');
+                }
+
+                // Actualizar gráficas SOLO si hay datos
+                if (data.modulos_conectados && data.time_history.length > 0) {
+                    tempChart.data.labels = data.time_history;
+                    tempChart.data.datasets[0].data = data.temp_history;
+                    tempChart.update('none');
+
+                    humidityChart.data.labels = data.time_history;
+                    humidityChart.data.datasets[0].data = data.humidity_history;
+                    humidityChart.update('none');
+
+                    rainChart.data.labels = data.time_history;
+                    rainChart.data.datasets[0].data = data.rain_history;
+                    rainChart.update('none');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Inicializar
+        initCharts();
+        updateData(); // Primera carga
+
+        // Actualizar cada 3 segundos
+        setInterval(updateData, 3000);
+    </script>
+</body>
+</html>
