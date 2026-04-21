@@ -140,6 +140,7 @@ def status():
         'archivo_tamaño': f"{size:.1f} MB",
         'ultimo_registro': sensor_data['time']
     })
+    
     @app.route('/csv_full')
     def csv_full():
         """Vista completa del CSV (últimos 100 registros)"""
