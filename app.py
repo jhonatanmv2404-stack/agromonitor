@@ -148,7 +148,7 @@ def status():
             return render_template('csv_view.html', registros=[])
         
         ultimos = historico_csv[-100:]
-        return render_template('csv_view.html', registros=ultimos})
+        return render_template('csv_view.html', registros=ultimos)
 
 if __name__ == '__main__':
     threading.Thread(target=update_data, daemon=True).start()
