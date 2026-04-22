@@ -159,9 +159,8 @@ def csv_full():
         '''
 
 @app.route('/csv_view.html')
-def csv_view_page():
-    try:
-        return send_from_directory('templates', 'csv_view.html')
+def csv_view():
+    return render_template('csv_view.html')
     except:
         return "csv_view.html no encontrado - crear templates/csv_view.html"
 
