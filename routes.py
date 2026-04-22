@@ -74,22 +74,52 @@ def download_csv():
         headers={'Content-Disposition': 'attachment; filename=datos.csv'}
     )
     
-    @data_bp.route('/csv_full')
-def csv_full_page():
-    """✅ Página intermedia → csv_view.html"""
-    return '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta http-equiv="refresh" content="0; url=/csv_view.html">
-        <title>Redirigiendo...</title>
-        <style>body{font-family:Arial;text-align:center;padding:50px;background:#4CAF50;color:white;}</style>
-    </head>
-    <body>
-        <h1>📋 Cargando Registro Completo...</h1>
-        <p>Redirigiendo en 1 segundo...</p>
-        <a href="/csv_view.html">Click aquí si no redirige</a><br><br>
-        <a href="/" style="color:#fff;">🏠 Volver Dashboard</a>
-    </body>
-    </html>
-    '''
+ @data_bp.route('/csv_full')
+ def csv_full():
+        """✅ Botón Ver Registro Completo"""
+        return '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Redirigiendo...</title>
+            <meta http-equiv="refresh" content="0; url=/csv_view.html">
+            <style>
+                body { 
+                    font-family: 'Segoe UI', Arial; 
+                    text-align: center; 
+                    padding: 100px 20px; 
+                    background: linear-gradient(135deg, #4CAF50, #45a049);
+                    color: white; 
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                }
+                .container { max-width: 500px; margin: 0 auto; }
+                h1 { font-size: 2.5em; margin-bottom: 20px; }
+                p { font-size: 1.2em; margin-bottom: 30px; opacity: 0.9; }
+                .btn { 
+                    display: inline-block; 
+                    padding: 15px 30px; 
+                    background: white; 
+                    color: #4CAF50; 
+                    text-decoration: none; 
+                    border-radius: 50px; 
+                    font-weight: 600; 
+                    font-size: 1.1em;
+                    margin: 10px;
+                    transition: all 0.3s;
+                }
+                .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>📋 Registro Completo</h1>
+                <p>Cargando tabla de datos...</p>
+                <a href="/csv_view.html" class="btn">Abrir Tabla Completa</a>
+                <a href="/" class="btn">🏠 Volver Dashboard</a>
+            </div>
+        </body>
+        </html>
+        '''
