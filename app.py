@@ -14,6 +14,10 @@ app = Flask(__name__, static_folder='.', static_url_path='')
 def serve_sw():
     return send_from_directory('.', 'sw.js', mimetype='application/javascript')
 
+@app.route('/service-worker.js')
+def serve_service_worker():
+    return send_from_directory('.', 'service-worker.js', mimetype='application/javascript')
+
 @app.route('/manifest.json')
 def serve_manifest():
     return send_from_directory('.', 'manifest.json', mimetype='application/json')
